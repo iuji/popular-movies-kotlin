@@ -15,12 +15,16 @@ import com.squareup.picasso.Picasso
 
 
 class MovieAdapter constructor(private val mContext : Context): RecyclerView.Adapter<MovieAdapter.MovieViewHolder>() {
-    lateinit var mMovieList : List<Movie>
+    val mMovieList : MutableList<Movie> by lazy{
+        mutableListOf<Movie>()
+    }
 
     fun setMovieList(movies: List<Movie>){
-        mMovieList = movies
+        mMovieList.clear()
+        mMovieList.addAll(movies)
         notifyDataSetChanged()
     }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MovieViewHolder {
         val context = parent.context
         val layoutIdForListMovie = R.layout.card_item_movie

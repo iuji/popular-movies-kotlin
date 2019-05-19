@@ -1,13 +1,16 @@
-package br.com.iuji.popularmovies.data.remote
+package br.com.iuji.popularmovies.data.repository.local.remote
 
+import br.com.iuji.popularmovies.BuildConfig
 import br.com.iuji.popularmovies.domain.Movie
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+private val apiKey = BuildConfig.api_key
+interface MovieApi {
 
-interface MovieService {
+
     @GET("{search_type}")
     fun listMovies(@Path("search_type") searchType: String, @Query("api_key") apiKey: String): Call<List<Movie>>
 
