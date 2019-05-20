@@ -1,4 +1,4 @@
-package br.com.iuji.popularmovies.domain
+package br.com.iuji.popularmovies.model.domain
 
 class Trailer {
     val key: String? = null

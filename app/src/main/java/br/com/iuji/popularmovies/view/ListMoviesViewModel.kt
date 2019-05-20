@@ -2,46 +2,28 @@ package br.com.iuji.popularmovies.view
 
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
-import br.com.iuji.popularmovies.domain.Movie
+import android.arch.lifecycle.MutableLiveData
+import br.com.iuji.popularmovies.model.domain.MovieResponse
+import br.com.iuji.popularmovies.model.status.StatusLoading
+import br.com.iuji.popularmovies.model.status.StatusResponse
+import br.com.iuji.popularmovies.model.usecases.MovieUseCase
+import io.reactivex.disposables.CompositeDisposable
 
-class ListMoviesViewModel(private val repository: MovieRepository, application : Application) : AndroidViewModel(application){
+class ListMoviesViewModel(private val useCase: MovieUseCase, application : Application) : AndroidViewModel(application){
 
-    var mMovies : List<Movie>? = null
-    private val localType = "Favorites Movies"
+    private val moviesData =  MutableLiveData<StatusResponse<MovieResponse>>()
+    private val disposables = CompositeDisposable()
 
-    fun load(searchType : String){
-        // Começa loading
-        if(searchType == localType){
-            loadLocal()
-        } else{
-            loadRemote(searchType)
-        }
+    override fun onCleared() {
+        super.onCleared()
+        disposables.dispose()
+    }
+    fun getMovieData() = moviesData
+
+    fun fetchMoviesList(searchType : String){
+        moviesData.value = StatusLoading()
+        useCase.getMovies(moviesData, searchType)
+                .also { disposables.add(it) }
     }
 
-    private fun loadRemote(searchType: String) {
-        repository.listRemoteMovies(onSuccess(), onError(), searchType)
-    }
-
-    private fun loadLocal() {
-        repository.listLocalMovies(onSuccess(), onError())
-    }
-
-    private fun onSuccess(): (List<Movie>) -> Unit {
-        return { items ->
-
-            if (items.isEmpty()) {
-                // Mensagem de lista vazia
-            } else {
-                mMovies = items
-            }
-
-            // finaliza loading
-        }
-    }
-
-    private fun onError(): () -> Unit{
-        return {
-
-        }
-    }
 }

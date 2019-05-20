@@ -1,21 +1,21 @@
 package br.com.iuji.popularmovies.adapter
 
-import android.content.Context
 import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import br.com.iuji.popularmovies.domain.Movie
 import android.widget.TextView
 import br.com.iuji.popularmovies.R
+import br.com.iuji.popularmovies.model.domain.Movie
 import br.com.iuji.popularmovies.utils.Constants
+import br.com.iuji.popularmovies.view.MovieListener
 import com.squareup.picasso.Picasso
 
 
-class MovieAdapter constructor(private val mContext : Context): RecyclerView.Adapter<MovieAdapter.MovieViewHolder>() {
-    val mMovieList : MutableList<Movie> by lazy{
+class MovieAdapter constructor(private val movieListener: MovieListener): RecyclerView.Adapter<MovieAdapter.MovieViewHolder>() {
+    private val mMovieList : MutableList<Movie> by lazy{
         mutableListOf<Movie>()
     }
 
@@ -33,7 +33,7 @@ class MovieAdapter constructor(private val mContext : Context): RecyclerView.Ada
 
         val view : View = layoutInflater.inflate(layoutIdForListMovie, parent, shouldAttachToParentImmediately)
 
-        return MovieViewHolder(view)
+        return MovieViewHolder(view, movieListener)
     }
 
     override fun getItemCount(): Int {
@@ -41,17 +41,25 @@ class MovieAdapter constructor(private val mContext : Context): RecyclerView.Ada
     }
 
     override fun onBindViewHolder(holder: MovieViewHolder, position: Int) {
-        holder.listItemTitleView?.text = mMovieList[position].title
-        val urlImage = Constants.BASE_URL_IMAGE + mMovieList[position].poster_path
-        Picasso.get().load(urlImage).placeholder(R.drawable.placeholder).into(holder.listItemImageView)
+        holder.bindHolder(mMovieList[position])
     }
 
 
-    inner class MovieViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class MovieViewHolder(
+            itemView: View,
+            private var listener: MovieListener
+    ) : RecyclerView.ViewHolder(itemView) {
         var listItemTitleView: TextView? = null
         var listItemImageView: ImageView? = null
         var cardView: CardView? = null
 
+
+        fun bindHolder(movie: Movie){
+            listItemTitleView?.text = movie.title
+            val urlImage = Constants.BASE_URL_IMAGE + movie.posterPath
+            Picasso.get().load(urlImage).placeholder(R.drawable.placeholder).into(listItemImageView)
+            cardView?.setOnClickListener{ listener.onMovieSelected(movie) }
+        }
         init {
             listItemTitleView = itemView.findViewById(R.id.tv_movie_title)
             listItemImageView = itemView.findViewById(R.id.iv_movie_img)

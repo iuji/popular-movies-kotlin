@@ -1,4 +1,4 @@
-package br.com.iuji.popularmovies.domain
+package br.com.iuji.popularmovies.model.domain
 
 class Review {
     val author: String? = null

@@ -3,42 +3,102 @@ package br.com.iuji.popularmovies.view
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.GridLayoutManager
+import android.util.DisplayMetrics
 import br.com.iuji.popularmovies.R
 import br.com.iuji.popularmovies.adapter.MovieAdapter
 import br.com.iuji.popularmovies.data.repository.local.remote.ClientRetrofit
-import br.com.iuji.popularmovies.data.repository.local.remote.MovieApi
-import br.com.iuji.popularmovies.data.repository.local.remote.RemoteRepository
+import br.com.iuji.popularmovies.model.domain.Movie
+import br.com.iuji.popularmovies.model.domain.MovieResponse
+import br.com.iuji.popularmovies.model.repositories.local.LocalRepository
+import br.com.iuji.popularmovies.model.repositories.remote.MovieApi
+import br.com.iuji.popularmovies.model.repositories.remote.RemoteRepository
+import br.com.iuji.popularmovies.model.status.StatusError
+import br.com.iuji.popularmovies.model.status.StatusLoading
+import br.com.iuji.popularmovies.model.status.StatusSuccess
+import br.com.iuji.popularmovies.model.status.nonNullObserve
+import br.com.iuji.popularmovies.model.usecases.MovieUseCase
+import br.com.iuji.popularmovies.utils.changeVisibility
 import kotlinx.android.synthetic.main.activity_list_movies.*
 
-class ListMoviesActivity : AppCompatActivity() {
 
-    private var mRecyclerView : RecyclerView? = null
+class ListMoviesActivity : AppCompatActivity(), MovieListener {
+
+    private val mAdapter = MovieAdapter(this)
+
     private lateinit var viewModel: ListMoviesViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_movies)
-        createViewModel()
+        setupRecyclerView()
+        viewModel = createViewModel()
+        observerViewModelResponse()
     }
 
     override fun onResume() {
         super.onResume()
-        setupRecyclerView()
-        viewModel = createViewModel()
+        viewModel.fetchMoviesList(TYPE_SEARCH_POPULAR)
     }
 
     private fun setupRecyclerView(){
-        mRecyclerView = rv_movies
-        mRecyclerView?.adapter = MovieAdapter(applicationContext)
-        mRecyclerView?.layoutManager = LinearLayoutManager(applicationContext)
+        rv_movies?.setHasFixedSize(true)
+        rv_movies?.adapter = mAdapter
+        val layoutManager = GridLayoutManager(this, numberOfColumns())
+        rv_movies?.layoutManager = layoutManager
+    }
+
+    private fun numberOfColumns(): Int {
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val widthDivider = 300
+        val width = displayMetrics.widthPixels
+        val nColumns = width / widthDivider
+        return if (nColumns < 2) 2 else nColumns
     }
 
     private fun createViewModel(): ListMoviesViewModel{
         val retrofit = ClientRetrofit.getClient()
-        val repository = RemoteRepository(retrofit.create(MovieApi::class.java))
-        val factory = ListMoviesViewModelFactory(repository, application)
+        val remoteRepository = RemoteRepository(retrofit.create(MovieApi::class.java))
+        val localRepository = LocalRepository()
+        val useCase = MovieUseCase(remoteRepository, localRepository)
+        val factory = ListMoviesViewModelFactory(useCase, application)
         return ViewModelProviders.of(this, factory).get(ListMoviesViewModel::class.java)
+    }
+
+    private fun observerViewModelResponse() {
+        viewModel.getMovieData().nonNullObserve(this) { statusResponse ->
+            when (statusResponse) {
+                is StatusSuccess    -> onSuccess(statusResponse.data)
+                is StatusError      -> onError()
+                is StatusLoading    -> setLoading(true)
+            }
+        }
+    }
+
+    private fun setLoading(loading: Boolean) {
+        pb_loading_indicator.changeVisibility(loading)
+    }
+
+    private fun onSuccess(movies: MovieResponse) {
+        setLoading(false)
+        view_error.changeVisibility(false)
+        view_movies.changeVisibility(true)
+        mAdapter.setMovieList(movies.results)
+    }
+
+    private fun onError(){
+        setLoading(false)
+        view_movies.changeVisibility(false)
+        view_error.changeVisibility(true)
+    }
+
+    override fun onMovieSelected(movie: Movie) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    companion object {
+        val TYPE_SEARCH_POPULAR = "popular"
+        val TYPE_SEARCH_TOP_RATED = "top_rated"
     }
 }

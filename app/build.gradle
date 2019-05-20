@@ -3,6 +3,10 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-android-extensions'
 
+androidExtensions {
+    experimental = true
+}
+
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -12,7 +16,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        buildConfigField 'String', 'api_key', "\"informe_apikey\""
+        buildConfigField 'String', 'api_key', "\"79e6996a3fb5868292133e297edb0308\""
     }
     buildTypes {
         release {
@@ -33,6 +37,7 @@ dependencies {
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation "android.arch.lifecycle:extensions:1.1.1"
     implementation "android.arch.persistence.room:runtime:1.1.1"
+    implementation "org.jetbrains.anko:anko-commons:0.10.3"
     kapt "android.arch.lifecycle:compiler:1.1.1"
 
     implementation 'com.android.support:cardview-v7:28.0.0'
