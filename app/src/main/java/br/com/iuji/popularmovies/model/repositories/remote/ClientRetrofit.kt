@@ -1,4 +1,4 @@
-package br.com.iuji.popularmovies.data.repository.local.remote
+package br.com.iuji.popularmovies.model.repositories.remote
 
 import br.com.iuji.popularmovies.utils.Constants
 import io.reactivex.schedulers.Schedulers

@@ -7,7 +7,7 @@ import android.support.v7.widget.GridLayoutManager
 import android.util.DisplayMetrics
 import br.com.iuji.popularmovies.R
 import br.com.iuji.popularmovies.adapter.MovieAdapter
-import br.com.iuji.popularmovies.data.repository.local.remote.ClientRetrofit
+import br.com.iuji.popularmovies.model.repositories.remote.ClientRetrofit
 import br.com.iuji.popularmovies.model.domain.Movie
 import br.com.iuji.popularmovies.model.domain.MovieResponse
 import br.com.iuji.popularmovies.model.repositories.local.LocalRepository
@@ -20,6 +20,7 @@ import br.com.iuji.popularmovies.model.status.nonNullObserve
 import br.com.iuji.popularmovies.model.usecases.MovieUseCase
 import br.com.iuji.popularmovies.utils.changeVisibility
 import kotlinx.android.synthetic.main.activity_list_movies.*
+import org.jetbrains.anko.toast
 
 
 class ListMoviesActivity : AppCompatActivity(), MovieListener {
@@ -33,12 +34,13 @@ class ListMoviesActivity : AppCompatActivity(), MovieListener {
         setContentView(R.layout.activity_list_movies)
         setupRecyclerView()
         viewModel = createViewModel()
-        observerViewModelResponse()
     }
 
     override fun onResume() {
         super.onResume()
         viewModel.fetchMoviesList(TYPE_SEARCH_POPULAR)
+//        viewModel.fetchFavoritesList()
+        observerViewModelResponse()
     }
 
     private fun setupRecyclerView(){
@@ -60,7 +62,7 @@ class ListMoviesActivity : AppCompatActivity(), MovieListener {
     private fun createViewModel(): ListMoviesViewModel{
         val retrofit = ClientRetrofit.getClient()
         val remoteRepository = RemoteRepository(retrofit.create(MovieApi::class.java))
-        val localRepository = LocalRepository()
+        val localRepository = LocalRepository(applicationContext)
         val useCase = MovieUseCase(remoteRepository, localRepository)
         val factory = ListMoviesViewModelFactory(useCase, application)
         return ViewModelProviders.of(this, factory).get(ListMoviesViewModel::class.java)
@@ -69,22 +71,26 @@ class ListMoviesActivity : AppCompatActivity(), MovieListener {
     private fun observerViewModelResponse() {
         viewModel.getMovieData().nonNullObserve(this) { statusResponse ->
             when (statusResponse) {
-                is StatusSuccess    -> onSuccess(statusResponse.data)
+                is StatusSuccess    -> onSuccess(statusResponse.data.results)
                 is StatusError      -> onError()
                 is StatusLoading    -> setLoading(true)
             }
         }
+
+//        viewModel.getFavoriteData().nonNullObserve(this){ response ->
+//            onSuccess(response)
+//        }
     }
 
     private fun setLoading(loading: Boolean) {
         pb_loading_indicator.changeVisibility(loading)
     }
 
-    private fun onSuccess(movies: MovieResponse) {
+    private fun onSuccess(movies: List<Movie>) {
         setLoading(false)
         view_error.changeVisibility(false)
         view_movies.changeVisibility(true)
-        mAdapter.setMovieList(movies.results)
+        mAdapter.setMovieList(movies)
     }
 
     private fun onError(){
@@ -94,7 +100,7 @@ class ListMoviesActivity : AppCompatActivity(), MovieListener {
     }
 
     override fun onMovieSelected(movie: Movie) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        toast("clicou no: "+movie.originalTitle)
     }
 
     companion object {
